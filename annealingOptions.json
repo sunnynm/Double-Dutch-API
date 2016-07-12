@@ -1,0 +1,7 @@
+{
+    "numAnnealings": 1,
+    "iterPerAnnealing": 10000,
+    "initialTemp": 1000000000,
+    "probDecay": 0.1,
+    "synthesisOption": "minimize"
+}
