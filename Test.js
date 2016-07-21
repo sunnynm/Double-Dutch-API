@@ -456,6 +456,137 @@ function lCluster(lNodes, target) {
     };
 }
 
+function fullFactorialTemplate(name, numsLevelsPerFactor, type) { //class
+    this.name = name;
+    this.numsLevelsPerFactor = numsLevelsPerFactor;
+    this.designGrid = [];
+    this.type = type;
+    this.resolution;
+    this.generators;
+    this.rangeGrid = [];
+    this.rangeFreqGrid = []; //aka costModGrid
+    this.rangeMaps = [];
+    var i, j;
+    for (i = 0; i < numsLevelsPerFactor.length; i++) {
+        this.rangeGrid[i] = [];
+        this.rangeFreqGrid[i] = [];
+        this.rangeMaps[i] = {};
+        if (numsLevelsPerFactor[i] == 1) {
+            rangeGrid[i].push(1);
+        } else {
+            for (j = -Math.floor(numsLevelsPerFactor[i]/2); j <= Math.floor(numsLevelsPerFactor[i]/2); j++) {
+                if (j != 0 || numsLevelsPerFactor[i]%2 != 0) {
+                    rangeGrid[i].push(j);
+                }
+            }
+        }
+        for (j = 0; j < this.rangeGrid[i].length; j++) {
+            this.rangeMaps[i][hash(this.rangeGrid[i][j])] = j;
+            this.rangeFreqGrid[i][j] = 1;
+        }
+    }
+    this.isEmpty = function() {
+        return this.getDesignGrid().length == 0;
+    };
+    this.isGridValid = function() {
+        var k;
+        for (k = 0; k < this.getDesignGrid().length; k++) {
+            if (this.getDesignGrid()[k].length == 0 || (k > 0 && this.getDesignGrid()[k].length != this.getDesignGrid()[k - 1].length)) {
+                return false;
+            }
+        }
+        return true;
+    };
+    this.isRangeValid = function(numsLevelsPerFactor) {
+        var i;
+        for (i = 0; i < this.rangeGrid.length; i++) {
+            if (this.rangeGrid[i].length == 0) {
+                return false;
+            }
+        }
+        if (arguments.length > 0) {
+            if (this.rangeGrid.length != numsLevelsPerFactor.length) {
+                return false;
+            } else {
+                for (i = 0; i < this.rangeGrid.length; i++) {
+                    if (this.rangeGrid[i].length != numsLevelsPerFactor[i]) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    };
+    this.isRangeValidVsDesign = function(numsLevelsPerFactor) {
+        var i;
+        if (this.rangeGrid.length != numsLevelsPerFactor.length) {
+            return false;
+        } else {
+            for (i = 0; i < this.rangeGrid.length; i++) {
+                if (this.rangeGrid[i].length != numsLevelsPerFactor[i]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+    this.isGridValidVsDesign = function(numFactors) {
+        if (this.isEmpty()) {
+            return false;
+        } else {
+            var k;
+            for (k = 0; k < this.getDesignGrid().length; k++) {
+                if (this.getDesignGrid()[k].length != numFactors) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+    this.indexDesignVsRange = function(k, i) {
+        return this.rangeMaps[i][hash(this.getDesignGrid()[k][i])];
+    };
+    this.getDesignGrid = function() {
+        if (designGrid.length == 0 && numsLevelsPerFactor.length > 0) {
+            var ranges = [];
+            var numDesigns = 1;
+            var i, j;
+            for (i = 0; i < numsLevelsPerFactor.length; i++) {
+                ranges.push([]);
+                numDesigns *= numsLevelsPerFactor[i];
+                if (numsLevelsPerFactor[i] == 1) {
+                    ranges[i].push(1);
+                } else {
+                    for (j = -Math.floor(numsLevelsPerFactor[i]/2); j <= Math.floor(numsLevelsPerFactor[i]/2); j++) {
+                        if (j != 0 || numsLevelsPerFactor[i]%2 != 0) {
+                            ranges[i].push(j);
+                        }
+                    }
+                }
+            }
+
+            var k;
+            for (k = 0; k < numDesigns; k++) {
+                designGrid.push([]);
+            }
+            var designsPerLevel = 1;
+            j = 0;
+            for (i = 0; i < numsLevelsPerFactor.length; i++) {
+                for (k = 0; k < numDesigns; k++) {
+                    designGrid[k].push(ranges[i][j]);
+                    if ((k + 1)%designsPerLevel == 0) {
+                        j++;
+                    }
+                    if (j == numsLevelsPerFactor[i]) {
+                        j = 0;
+                    }
+                }
+                designsPerLevel *= numsLevelsPerFactor[i];
+            }
+        }
+        return designGrid;
+    };
+}
 
 function doeTemplate(name, designGrid, type, resolution, generators) { //class
     this.name = name;
@@ -467,12 +598,12 @@ function doeTemplate(name, designGrid, type, resolution, generators) { //class
     this.rangeFreqGrid = []; //aka costModGrid
     this.rangeMaps = [];
     this.isEmpty = function() {
-        return this.designGrid.length == 0;
+        return this.getDesignGrid().length == 0;
     };
     this.isGridValid = function() {
         var k;
-        for (k = 0; k < this.designGrid.length; k++) {
-            if (this.designGrid[k].length == 0 || (k > 0 && this.designGrid[k].length != this.designGrid[k - 1].length)) {
+        for (k = 0; k < this.getDesignGrid().length; k++) {
+            if (this.getDesignGrid()[k].length == 0 || (k > 0 && this.getDesignGrid()[k].length != this.getDesignGrid()[k - 1].length)) {
                 return false;
             }
         }
@@ -550,8 +681,8 @@ function doeTemplate(name, designGrid, type, resolution, generators) { //class
             return false;
         } else {
             var k;
-            for (k = 0; k < this.designGrid.length; k++) {
-                if (this.designGrid[k].length != numFactors) {
+            for (k = 0; k < this.getDesignGrid().length; k++) {
+                if (this.getDesignGrid()[k].length != numFactors) {
                     return false;
                 }
             }
@@ -559,7 +690,10 @@ function doeTemplate(name, designGrid, type, resolution, generators) { //class
         return true;
     };
     this.indexDesignVsRange = function(k, i) {
-        return this.rangeMaps[i][hash(this.designGrid[k][i])];
+        return this.rangeMaps[i][hash(this.getDesignGrid()[k][i])];
+    };
+    this.getDesignGrid = function() {
+        return designGrid;
     };
 }
 
@@ -568,45 +702,7 @@ function doeTemplater() { //function
     this.doeTypes = {fullFactorial: "fullFactorial", fractionalFactorial: "fractionalFactorial", plackettBurman: "plackettBurman",
         boxBehnken: "boxBehnken"};
     this.makeFullFactorial = function(numsLevelsPerFactor) {
-        var designGrid = [];
-        if (numsLevelsPerFactor.length > 0) {
-            var ranges = [];
-            var numDesigns = 1;
-            var i, j;
-            for (i = 0; i < numsLevelsPerFactor.length; i++) {
-                ranges.push([]);
-                numDesigns *= numsLevelsPerFactor[i];
-                if (numsLevelsPerFactor[i] == 1) {
-                    ranges[i].push(1);
-                } else {
-                    for (j = -Math.floor(numsLevelsPerFactor[i]/2); j <= Math.floor(numsLevelsPerFactor[i]/2); j++) {
-                        if (j != 0 || numsLevelsPerFactor[i]%2 != 0) {
-                            ranges[i].push(j);
-                        }
-                    }
-                }
-            }
-
-            var k;
-            for (k = 0; k < numDesigns; k++) {
-                designGrid.push([]);
-            }
-            var designsPerLevel = 1;
-            j = 0;
-            for (i = 0; i < numsLevelsPerFactor.length; i++) {
-                for (k = 0; k < numDesigns; k++) {
-                    designGrid[k].push(ranges[i][j]);
-                    if ((k + 1)%designsPerLevel == 0) {
-                        j++;
-                    }
-                    if (j == numsLevelsPerFactor[i]) {
-                        j = 0;
-                    }
-                }
-                designsPerLevel *= numsLevelsPerFactor[i];
-            }
-        }
-        return new doeTemplate(this.makeFullFactorialName(numsLevelsPerFactor), designGrid, this.doeTypes.fullFactorial);
+        return new fullFactorialTemplate(this.makeFullFactorialName(numsLevelsPerFactor), numsLevelsPerFactor, this.doeTypes.fullFactorial);
     };
     this.makeFullFactorialName = function(numsLevelsPerFactor) {
         var templateName;
@@ -658,9 +754,9 @@ function doeTemplater() { //function
                 }
                 var fullFactorial = templater.makeFullFactorial(numsLevelsPerFactor);
                 var k;
-                for (k = 0; k < fullFactorial.designGrid.length; k++) {
-                    for (i = 0; i < fullFactorial.designGrid[k].length; i++) {
-                        baseFactors[i].push(fullFactorial.designGrid[k][i]);
+                for (k = 0; k < fullFactorial.getDesignGrid().length; k++) {
+                    for (i = 0; i < fullFactorial.getDesignGrid()[k].length; i++) {
+                        baseFactors[i].push(fullFactorial.getDesignGrid()[k][i]);
                     }
                 }
                 return baseFactors;
@@ -810,12 +906,12 @@ function doeTemplater() { //function
                         k++;
                     }
                 } else {
-                    for (m = 0; m < fullFactorial.designGrid.length; m++) {
+                    for (m = 0; m < fullFactorial.getDesignGrid().length; m++) {
                         n = 0;
                         designGrid.push([]);
                         for (i = 0; i < bbSeed[b].length; i++) {
                             if (bbSeed[b][i] == 1) {
-                                designGrid[k].push(fullFactorial.designGrid[m][n]);
+                                designGrid[k].push(fullFactorial.getDesignGrid()[m][n]);
                                 n++;
                             } else {
                                 designGrid[k].push(bbSeed[b][i]);
@@ -882,8 +978,8 @@ function doeTemplater() { //function
             outputData[0][i + 1] = "Factor " + i;
         }
         var k;
-        for (k = 0; k < template.designGrid.length; k++) {
-            outputData.push([k + 1].concat(template.designGrid[k]));
+        for (k = 0; k < template.getDesignGrid().length; k++) {
+            outputData.push([k + 1].concat(template.getDesignGrid()[k]));
         }
         if (template.generators != null) {
             outputData[0].push("Generators");
@@ -1849,9 +1945,9 @@ function output(result, template, $fldNodes, weightsobj, costobj){
             $fldNodes[i].children.sort(function(a, b) {return a.parameter.value - b.parameter.value});
         }
         var j, k;
-        for (k = 0; k < $selectedTemplateA.designGrid.length; k++) {
+        for (k = 0; k < $selectedTemplateA.getDesignGrid().length; k++) {
             outputData.push([]);
-            for (i = 0; i < $selectedTemplateA.designGrid[k].length; i++) {
+            for (i = 0; i < $selectedTemplateA.getDesignGrid()[k].length; i++) {
                 j = $selectedTemplateA.indexDesignVsRange(k, i);
                 outputData[k + 1].push($fldNodes[i].children[j].bioDesign.name);
             }
@@ -1866,9 +1962,9 @@ function output(result, template, $fldNodes, weightsobj, costobj){
             $fldNodes[i].children.sort(function(a, b) {return a.parameter.value - b.parameter.value});
         }
         var j, k;
-        for (k = 0; k < $selectedTemplateA.designGrid.length; k++) {
+        for (k = 0; k < $selectedTemplateA.getDesignGrid().length; k++) {
             outputData.push([]);
-            for (i = 0; i < $selectedTemplateA.designGrid[k].length; i++) {
+            for (i = 0; i < $selectedTemplateA.getDesignGrid()[k].length; i++) {
                 j = $selectedTemplateA.indexDesignVsRange(k, i);
                 outputData[k + 1].push($fldNodes[i].children[j].parameter.value);
             }
