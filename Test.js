@@ -236,6 +236,7 @@ function hash(value) {
             (value.__hash || (value.__hash = ++arguments.callee.current)) :
             value.toString());
 };
+hash.current = 0;
 
 function factorial(n) {
     var factorialStore = [];
@@ -476,7 +477,7 @@ function fullFactorialTemplate(name, numsLevelsPerFactor, type) { //class
         } else {
             for (j = -Math.floor(numsLevelsPerFactor[i]/2); j <= Math.floor(numsLevelsPerFactor[i]/2); j++) {
                 if (j != 0 || numsLevelsPerFactor[i]%2 != 0) {
-                    rangeGrid[i].push(j);
+                    this.rangeGrid[i].push(j);
                 }
             }
         }
@@ -547,7 +548,7 @@ function fullFactorialTemplate(name, numsLevelsPerFactor, type) { //class
         return this.rangeMaps[i][hash(this.getDesignGrid()[k][i])];
     };
     this.getDesignGrid = function() {
-        if (designGrid.length == 0 && numsLevelsPerFactor.length > 0) {
+        if (this.designGrid.length == 0 && numsLevelsPerFactor.length > 0) {
             var ranges = [];
             var numDesigns = 1;
             var i, j;
@@ -567,13 +568,13 @@ function fullFactorialTemplate(name, numsLevelsPerFactor, type) { //class
 
             var k;
             for (k = 0; k < numDesigns; k++) {
-                designGrid.push([]);
+                this.designGrid.push([]);
             }
             var designsPerLevel = 1;
             j = 0;
             for (i = 0; i < numsLevelsPerFactor.length; i++) {
                 for (k = 0; k < numDesigns; k++) {
-                    designGrid[k].push(ranges[i][j]);
+                    this.designGrid[k].push(ranges[i][j]);
                     if ((k + 1)%designsPerLevel == 0) {
                         j++;
                     }
@@ -584,7 +585,7 @@ function fullFactorialTemplate(name, numsLevelsPerFactor, type) { //class
                 designsPerLevel *= numsLevelsPerFactor[i];
             }
         }
-        return designGrid;
+        return this.designGrid;
     };
 }
 
@@ -597,8 +598,12 @@ function doeTemplate(name, designGrid, type, resolution, generators) { //class
     this.rangeGrid = [];
     this.rangeFreqGrid = []; //aka costModGrid
     this.rangeMaps = [];
+    this.getDesignGrid = function() {
+        return this.designGrid;
+    };
     this.isEmpty = function() {
-        return this.getDesignGrid().length == 0;
+        var grid = this.getDesignGrid();
+        return (grid.length == 0);
     };
     this.isGridValid = function() {
         var k;
@@ -691,9 +696,6 @@ function doeTemplate(name, designGrid, type, resolution, generators) { //class
     };
     this.indexDesignVsRange = function(k, i) {
         return this.rangeMaps[i][hash(this.getDesignGrid()[k][i])];
-    };
-    this.getDesignGrid = function() {
-        return designGrid;
     };
 }
 
@@ -1423,7 +1425,7 @@ function flSolver() {
         if (arguments.length < 5) {
             //timer = new Timer();
         }
-        console.log(clusterGrid);
+        //console.log(clusterGrid);
         var soln;
         var solnCost;
         var bestSoln = this.randomSolve(clusterGrid, weights, annealingOptions.synthesisOption, 1, costModGrid);
@@ -2008,8 +2010,8 @@ function output(result, template, $fldNodes, weightsobj, costobj){
     jsonoutput["Total Assignment Cost"] = costobj.total;
     jsonoutput["Weighted Total Assignment Cost"] = costobj.weightedTotal;
     jsonoutput["Module Assignment"] = generateModuleAssignment($fldNodes);
-    //jsonoutput["Library"] = generateLibrary($fldNodes, template);
-    //jsonoutput["LevelLibrary"] = generateLevelLibrary($fldNodes, template);
+    jsonoutput["Library"] = generateLibrary($fldNodes, template);
+    jsonoutput["LevelLibrary"] = generateLevelLibrary($fldNodes, template);
     return jsonoutput;
 
 }
@@ -2419,13 +2421,15 @@ var NMC = 10;
 var ANLO = require("./annealingOptions.json");
 var WGT = require("./weights.json");
 var CONS =  [];//[[ 'nifH', 't27, p25']];
-var NF = 6;
+var NF = 5;
 function isObject(val) {
     if (val === null) {
         return false;
     }
     return ( (typeof val === 'function') || (typeof val === 'object') );
 }
+if (NF == PL.geneIDs.length)
+    console.log("TRUE");
 console.log("fullFactorial_solve");
 console.log(fullFactorial_solve(NLPF,PL,NMC,ANLO,WGT,CONS));
 console.log("fractionalFactorial_solve");
